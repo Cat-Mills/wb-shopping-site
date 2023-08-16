@@ -97,14 +97,28 @@ app.get('/checkout', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  // TODO: Implement this
-  res.send('Login has not been implemented yet!');
+  res.render('login.html.njk');
 });
 
 app.post('/process-login', (req, res) => {
-  // TODO: Implement this
-  res.send('Login has not been implemented yet!');
+  for(const user of users){ //loops through each user object in array using the imported users.json file at the top of the page.
+    if(req.body.username === user.username && req.body.password === user.password){ //Checks to see if the username and password match any in users object. Has to be req.body instead of req.query since it is an app.post, not an app.get
+      req.session.username = user.username // Stores the username in the current session
+      res.redirect('/all-animals') //Sends you to the animals page
+      return //ends the loop
+    }
+  }
+  res.render('login.html.njk', {message: 'Invalid username and password.'}) //passes message if the above statement is failed. (incorrect username and password.)
 });
+
+app.get('/logout', (req,res) => {
+  req.session.destroy((err) =>{
+    if(err){
+      console.log(err)
+    }
+    res.redirect('/all-animals')
+  })
+})
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}...`);
