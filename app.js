@@ -18,76 +18,78 @@ nunjucks.configure('views', {
   express: app,
 });
 
-function getAnimalDetails(animalId) {
+function getAnimalDetails(animalId) { 
   return stuffedAnimalData[animalId];
-}
+} //?This line declares a function named `getAnimalDetails` that takes an `animalId` as a parameter and returns the details of a stuffed animal from the data source called `stuffedAnimalData`. This is used to retrieve details about a specific stuffed animal by passing its corresponding `animalId` as an argument.
 
-app.get('/', (req, res) => {
-  res.render('index.html');
+
+app.get('/', (req, res) => { //?Sets up a route handler for the HTTP GET request to the root URL ('/'), which is the main landing page of the web application.
+  res.render('index.html'); //?This line uses the `res.render()` method to render a template named 'index.html'. 
 });
 
-app.get('/all-animals', (req, res) => {
-  res.render('all-animals.html.njk', { animals: Object.values(stuffedAnimalData) });
+
+app.get('/all-animals', (req, res) => { //?Sets up a route handler for the HTTP GET request to the '/all-animals' endpoint. When accessed by a user, the following code will be executed.
+  res.render('all-animals.html.njk', { animals: Object.values(stuffedAnimalData) }); //? renders a template named 'all-animals.html.njk'. It also passes an object with a property named `animals` that contains an array of stuffed animal data.
+});
+//? { animals: Object.values(stuffedAnimalData) }
+//? This object defines the template variables. The `animals` property contains an array that is populated with the values of the `stuffedAnimalData` object. The `Object.values()` method is used to extract an array of the values from the `stuffedAnimalsData` object.
+
+
+app.get('/animal-details/:animalId', (req, res) => { //? The `:animalId` is a route parameter, which means it can capture a value from the URL.
+  const animalDetails = getAnimalDetails(req.params.animalId) //? The `getAnimalDetails` function retrieves details of the stuffed animal based on the `animalId` parameter captured from the URL. It passes the `animalId` to the function to fetch the corresponding animal details.
+  res.render('animal-details.html.njk', { animal: animalDetails }); //? This object defines the template variable. The `animal` property contains the details of the stuffed animal retrieved using the `getAnimalDetails` function.
 });
 
-app.get('/animal-details/:animalId', (req, res) => {
-  const animalDetails = getAnimalDetails(req.params.animalId)
-  res.render('animal-details.html.njk', { animal: animalDetails });
-});
+app.get('/add-to-cart/:animalId', (req, res) => { //? The `:animalId` is a route parameter, which means it can capture a value from the URL.
 
-app.get('/add-to-cart/:animalId', (req, res) => {
-  // The logic here should be something like:
-  // - check if a "cart" exists in the session, and create one (an empty
-  // object keyed to the string "cart") if not
-  const {animalId} = req.params
-  if(!req.session.cart){
-    req.session.cart = {}
-  }
-  let {cart} = req.session
-  // - check if the desired animal id is in the cart, and if not, put it in
+  const {animalId} = req.params //? This line uses object destructuring to extract the `animalId` from the `req.params` object, which contains the route parameters. It assigns the extracted `animalId` to the `animalId` variable.
+
+  if(!req.session.cart){ 
+    req.session.cart = {} 
+  } //? This block of code checks if the `cart` object exists in the session. If not, it initializes an empty object for the cart. The `req.session` is an object used to store session data.
+
+  let {cart} = req.session //? This line uses object destructuring to assign the `cart` object from the `req.session` object to the `cart` variable.
+
   if(!cart[animalId]){
     cart[animalId] = 0
-  }
-  // - increment the count for that animal id by 1
+  } //? This block of code checks if the specified `animalId` exists as a key in the `cart` object. If not, it initializes the count of that item in the cart to 0.
+
   console.log(cart)
-  cart[animalId] += 1
-  // - redirect the user to the cart page
-  res.redirect('/cart')
+
+  cart[animalId] += 1 //? This line increments the count of the specified `animalId` in the cart by 1, indicating that one or more of that item has been added to the cart.
+
+  res.redirect('/cart') //? After updating the cart, this line redirects the user to the '/cart' page to display the contents of their cart.
 });
 
-app.get('/cart', (req, res) => {
-  // - get the cart object from the session
+app.get('/cart', (req, res) => { //? This line sets up a route handler for the HTTP GET request to the '/cart' endpoint. When a user accesses the '/cart' page, the following code block will be executed.
+
   if(!req.session.cart){
     req.session.cart = {}
-  }
-  // - create an array to hold the animals in the cart, and a variable to hold the total cost of the order
-  let cart = req.session.cart
-    const cartItems = []
-    let total = 0
-  // - loop over the cart object, and for each animal id:
-  //   - get the animal object by calling getAnimalDetails
-  console.log(cart)
-  for(const animalId in cart){
-    console.log(animalId)
-    const animalDetails = getAnimalDetails(animalId)
-    const quantity = cart[animalId]
+  } //? This block of code checks if the `cart` object exists in the session. If not, it initializes an empty object for the cart. the `req.session` object is used to store session data.
+
+  let cart = req.session.cart //? This line assigns the `cart` object from the `req.session` object to the `cart` variable
+  const cartItems = [] //? initializes an empty array `cartItems` to store the cart item details.
+  let total = 0 //? initializes the `total` variable to keep track of the total cost of the items in the cart.
+
+  for(const animalId in cart){ //? This loop iterates through each item in the `cart` object
+
+    const animalDetails = getAnimalDetails(animalId) //? This line uses the `getAnimalDetails` function to retrieve details of a stuffed animal based on the `animalId` in the cart.
+
+    const quantity = cart[animalId] //? This line retrieves the quantity of the stuffed animals stored in the cart.
+
     animalDetails.quantity = quantity
 
     const subtotal = quantity * animalDetails.price
+
     animalDetails.subtotal = subtotal
 
     total += subtotal
 
     cartItems.push(animalDetails)
   }
-  //   - compute the total cost for that type of animal
-  //   - add this to the order total
-  //   - add quantity and total cost as properties on the animal object
-  //   - add the animal object to the array created above
-  // - pass the total order cost and the array of animal objects to the template
+
   res.render('cart.html.njk',{cartItems: cartItems, total: total})
-  // Make sure your function can also handle the case where no cart has
-  // been added to the session
+
 });
 
 app.get('/checkout', (req, res) => {
